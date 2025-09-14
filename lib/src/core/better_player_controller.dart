@@ -158,11 +158,20 @@ class BetterPlayerController {
   ///Was controls enabled before Picture in Picture opened.
   bool _wasControlsEnabledBeforePiP = false;
 
+  ///Flag used to track if PIP loading overlay should be shown.
+  bool _isPipLoading = false;
+
+  ///Timer for PIP loading overlay.
+  Timer? _pipLoadingTimer;
+
   ///GlobalKey of the BetterPlayer widget
   GlobalKey? _betterPlayerGlobalKey;
 
   ///Getter of the GlobalKey
   GlobalKey? get betterPlayerGlobalKey => _betterPlayerGlobalKey;
+
+  ///Getter for PIP loading state
+  bool get isPipLoading => _isPipLoading;
 
   ///StreamSubscription for VideoEvent listener
   StreamSubscription<VideoEvent>? _videoEventStreamSubscription;
@@ -600,6 +609,12 @@ class BetterPlayerController {
 
   ///Enables/disables full screen mode based on current fullscreen state.
   void toggleFullScreen() {
+    // Check if we're in PIP mode and user wants to go fullscreen
+    if (_wasInPipMode && !_isFullScreen) {
+      // Start PIP loading overlay when going from PIP to fullscreen
+      _startPipLoading();
+    }
+    
     _isFullScreen = !_isFullScreen;
     if (_isFullScreen) {
       _postControllerEvent(BetterPlayerControllerEvent.openFullscreen);
@@ -1067,6 +1082,10 @@ class BetterPlayerController {
       _wasInFullScreenBeforePiP = _isFullScreen;
       _wasControlsEnabledBeforePiP = _controlsEnabled;
       setControlsEnabled(false);
+      
+      // Start PIP loading overlay
+      _startPipLoading();
+      
       if (Platform.isAndroid) {
         _wasInFullScreenBeforePiP = _isFullScreen;
         await videoPlayerController?.enablePictureInPicture(
@@ -1107,6 +1126,10 @@ class BetterPlayerController {
     if (videoPlayerController == null) {
       throw StateError("The data source has not been initialized");
     }
+    
+    // Start PIP loading overlay
+    _startPipLoading();
+    
     return videoPlayerController!.disablePictureInPicture();
   }
 
@@ -1126,6 +1149,17 @@ class BetterPlayerController {
         (await videoPlayerController!.isPictureInPictureSupported()) ?? false;
 
     return isPipSupported && !_isFullScreen;
+  }
+
+  ///Start PIP loading overlay for 3 seconds
+  void _startPipLoading() {
+    _isPipLoading = true;
+    _pipLoadingTimer?.cancel();
+    _pipLoadingTimer = Timer(const Duration(seconds: 3), () {
+      _isPipLoading = false;
+      _postEvent(BetterPlayerEvent(BetterPlayerEventType.controlsVisible));
+    });
+    _postEvent(BetterPlayerEvent(BetterPlayerEventType.controlsHiddenStart));
   }
 
   ///Handle VideoEvent when remote controls notification / PiP is shown
@@ -1260,7 +1294,7 @@ class BetterPlayerController {
   ///cache started for given [betterPlayerDataSource] then it will be ignored.
   Future<void> stopPreCache(
       BetterPlayerDataSource betterPlayerDataSource) async {
-    return VideoPlayerController?.stopPreCache(betterPlayerDataSource.url,
+    return VideoPlayerController.stopPreCache(betterPlayerDataSource.url,
         betterPlayerDataSource.cacheConfiguration?.key);
   }
 
@@ -1294,6 +1328,7 @@ class BetterPlayerController {
       }
       _eventListeners.clear();
       _nextVideoTimer?.cancel();
+      _pipLoadingTimer?.cancel();
       _nextVideoTimeStreamController.close();
       _controlsVisibilityStreamController.close();
       _videoEventStreamSubscription?.cancel();

@@ -60,6 +60,8 @@ class _BetterPlayerState extends State<BetterPlayer>
   ///Subscription for controller events
   StreamSubscription? _controllerEventSubscription;
 
+
+
   @override
   void initState() {
     super.initState();

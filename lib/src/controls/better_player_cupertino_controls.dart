@@ -84,6 +84,7 @@ class _BetterPlayerCupertinoControlsState
     final isFullScreen = _betterPlayerController?.isFullScreen == true;
 
     _wasLoading = isLoading(_latestValue);
+    final bool isPipLoading = _betterPlayerController?.isPipLoading ?? false;
     final controlsColumn = Column(children: <Widget>[
       _buildTopBar(
         backgroundColor,
@@ -91,7 +92,7 @@ class _BetterPlayerCupertinoControlsState
         barHeight,
         buttonPadding,
       ),
-      if (_wasLoading)
+      if (_wasLoading || isPipLoading)
         Expanded(child: Center(child: _buildLoadingWidget()))
       else
         _buildHitArea(),

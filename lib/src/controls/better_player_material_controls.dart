@@ -65,6 +65,8 @@ class _BetterPlayerMaterialControlsState
   ///Builds main widget of the controls.
   Widget _buildMainWidget() {
     _wasLoading = isLoading(_latestValue);
+    final bool isPipLoading = _betterPlayerController?.isPipLoading ?? false;
+    
     if (_latestValue?.hasError == true) {
       return Container(
         color: Colors.black,
@@ -96,7 +98,7 @@ class _BetterPlayerMaterialControlsState
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (_wasLoading)
+            if (_wasLoading || isPipLoading)
               Center(child: _buildLoadingWidget())
             else
               _buildHitArea(),
