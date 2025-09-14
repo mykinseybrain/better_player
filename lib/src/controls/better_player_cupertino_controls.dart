@@ -84,7 +84,6 @@ class _BetterPlayerCupertinoControlsState
     final isFullScreen = _betterPlayerController?.isFullScreen == true;
 
     _wasLoading = isLoading(_latestValue);
-    final bool isPipLoading = _betterPlayerController?.isPipLoading ?? false;
     final controlsColumn = Column(children: <Widget>[
       _buildTopBar(
         backgroundColor,
@@ -92,10 +91,18 @@ class _BetterPlayerCupertinoControlsState
         barHeight,
         buttonPadding,
       ),
-      if (_wasLoading || isPipLoading)
-        Expanded(child: Center(child: _buildLoadingWidget()))
-      else
-        _buildHitArea(),
+      StreamBuilder<bool>(
+        stream: _betterPlayerController?.pipLoadingStream,
+        initialData: false,
+        builder: (context, snapshot) {
+          final bool isPipLoading = snapshot.data ?? false;
+          return Expanded(
+            child: _wasLoading || isPipLoading
+                ? Center(child: _buildLoadingWidget())
+                : _buildHitArea(),
+          );
+        },
+      ),
       _buildNextVideoWidget(),
       _buildBottomBar(
         backgroundColor,

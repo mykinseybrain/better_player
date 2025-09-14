@@ -65,7 +65,6 @@ class _BetterPlayerMaterialControlsState
   ///Builds main widget of the controls.
   Widget _buildMainWidget() {
     _wasLoading = isLoading(_latestValue);
-    final bool isPipLoading = _betterPlayerController?.isPipLoading ?? false;
     
     if (_latestValue?.hasError == true) {
       return Container(
@@ -95,22 +94,29 @@ class _BetterPlayerMaterialControlsState
       },
       child: AbsorbPointer(
         absorbing: controlsNotVisible,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (_wasLoading || isPipLoading)
-              Center(child: _buildLoadingWidget())
-            else
-              _buildHitArea(),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: _buildTopBar(),
-            ),
-            Positioned(bottom: 0, left: 0, right: 0, child: _buildBottomBar()),
-            _buildNextVideoWidget(),
-          ],
+        child: StreamBuilder<bool>(
+          stream: _betterPlayerController?.pipLoadingStream,
+          initialData: false,
+          builder: (context, snapshot) {
+            final bool isPipLoading = snapshot.data ?? false;
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                if (_wasLoading || isPipLoading)
+                  Center(child: _buildLoadingWidget())
+                else
+                  _buildHitArea(),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: _buildTopBar(),
+                ),
+                Positioned(bottom: 0, left: 0, right: 0, child: _buildBottomBar()),
+                _buildNextVideoWidget(),
+              ],
+            );
+          },
         ),
       ),
     );

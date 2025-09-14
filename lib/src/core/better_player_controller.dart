@@ -38,6 +38,10 @@ class BetterPlayerController {
   final StreamController<bool> _controlsVisibilityStreamController =
       StreamController.broadcast();
 
+  ///Stream controller which emits stream when PIP loading state changes.
+  final StreamController<bool> _pipLoadingStreamController =
+      StreamController.broadcast();
+
   ///Instance of video player controller which is adapter used to communicate
   ///between flutter high level code and lower level native code.
   VideoPlayerController? videoPlayerController;
@@ -130,6 +134,9 @@ class BetterPlayerController {
   ///Stream which sends flag whenever visibility of controls changes
   Stream<bool> get controlsVisibilityStream =>
       _controlsVisibilityStreamController.stream;
+
+  ///Stream which emits when PIP loading state changes.
+  Stream<bool> get pipLoadingStream => _pipLoadingStreamController.stream;
 
   ///Current app lifecycle state.
   AppLifecycleState _appLifecycleState = AppLifecycleState.resumed;
@@ -1154,9 +1161,11 @@ class BetterPlayerController {
   ///Start PIP loading overlay for 3 seconds
   void _startPipLoading() {
     _isPipLoading = true;
+    _pipLoadingStreamController.add(true);
     _pipLoadingTimer?.cancel();
     _pipLoadingTimer = Timer(const Duration(seconds: 3), () {
       _isPipLoading = false;
+      _pipLoadingStreamController.add(false);
       _postEvent(BetterPlayerEvent(BetterPlayerEventType.controlsVisible));
     });
     _postEvent(BetterPlayerEvent(BetterPlayerEventType.controlsHiddenStart));
@@ -1331,6 +1340,7 @@ class BetterPlayerController {
       _pipLoadingTimer?.cancel();
       _nextVideoTimeStreamController.close();
       _controlsVisibilityStreamController.close();
+      _pipLoadingStreamController.close();
       _videoEventStreamSubscription?.cancel();
       _disposed = true;
       _controllerEventStreamController.close();
